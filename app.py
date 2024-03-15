@@ -15,10 +15,24 @@
 import streamlit as st
 import pandas as pd
 import altair as alt
+import os
 from streamlit.logger import get_logger
 
 LOGGER = get_logger(__name__)
 
+def load_ite_data():
+    files = os.listdir('./data/')
+    files = sorted([f for f in files if f.endswith('.csv')])
+    result_yr = [int(f.split('.')[0]) for f in files]
+    dfs = []
+    for f,y in zip(files,result_yr):
+        df = pd.read_csv('./data/'+f)
+        df['year'] = int(y)
+        df = df.astype({'Score':int})
+        dfs.append(df)
+    return pd.concat(dfs)[['Score','year','CA-0','CA-1','CA-2','CA-3']].sort_values(by=['Score','year'],ascending=True).reset_index(drop=True)
+    # st.table(pd.concat(dfs))
+    # df = pd.read_csv('./data/2024.ITE.scaled.csv').sort_values(by='Score').reset_index(drop=True)
 
 def run():
     st.set_page_config(
@@ -29,17 +43,15 @@ def run():
     st.write("# Welcome to ITE Explorer! 👋")
 
     st.sidebar.success("Select a demo above.")
-
-    df = pd.read_csv('./2024.ITE.scaled.csv').sort_values(by='Score').reset_index(drop=True)
-    ite_cdf = df.set_index('Score')
-    # st.table(ite_cdf.reset_index())
+    df = load_ite_data()
+    ite_cdf = df.drop(columns=['year']).groupby('Score').mean()
+    # st.table(ite_cdf)
     data = pd.melt(ite_cdf.reset_index(), id_vars=['Score']).rename(columns={'value':'Percentile','variable':'year'})
-    ite_pdf = ite_cdf.diff()
-    pdf_data = pd.melt(ite_pdf.reset_index(), id_vars=['Score']).rename(columns={'value':'Percentile','variable':'year'})
+    # pdf_data = pd.melt(ite_cdf.diff().reset_index(), id_vars=['Score']).rename(columns={'value':'density','variable':'year'})
 
     # data = data.groupby('year').transform(lambda df: df.sort_values(by=['Percentile','Score']).diff())
 
-    chart = alt.Chart(data.query("Score > 10")).mark_line().encode(
+    chart = alt.Chart(data.query("Percentile > 1")).mark_line().encode(
         x='Score:Q',
         y='Percentile:Q',
         color='year'
