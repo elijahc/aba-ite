@@ -43,8 +43,8 @@ def basic_predictor():
 
 
 st.set_page_config(page_title="ABA Basic Predictor", page_icon="📈")
-st.markdown("# Plotting Demo")
-st.sidebar.header("Plotting Demo")
+st.markdown("# ABA Basic Predictor")
+st.sidebar.header("BASIC Predictor")
 st.write(
     """Use this page to predict ABA Basic Score"""
 )
